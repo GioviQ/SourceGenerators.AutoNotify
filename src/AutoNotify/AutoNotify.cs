@@ -71,7 +71,7 @@ namespace SourceGenerators
             StringBuilder source = new StringBuilder($@"
 namespace {namespaceName}
 {{
-    public partial class {classSymbol.Name} : {notifySymbol.ToDisplayString()}
+    partial class {classSymbol.Name} : {notifySymbol.ToDisplayString()}
     {{
 ");
 
