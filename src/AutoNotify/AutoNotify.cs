@@ -18,6 +18,7 @@ namespace SourceGenerators
 using System;
 namespace SourceGenerators
 {
+    #nullable enable
     [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
     [System.Diagnostics.Conditional(""AutoNotifyGenerator_DEBUG"")]
     sealed class AutoNotifyAttribute : Attribute
@@ -25,7 +26,7 @@ namespace SourceGenerators
         public AutoNotifyAttribute()
         {
         }
-        public string PropertyName { get; set; }
+        public string? PropertyName { get; set; }
     }
 }
 ";
@@ -54,31 +55,88 @@ namespace SourceGenerators
             foreach (IGrouping<INamedTypeSymbol, IFieldSymbol> group in receiver.Fields.GroupBy(f => f.ContainingType))
             {
                 string classSource = ProcessClass(group.Key, group.ToList(), attributeSymbol, notifySymbol, context);
-                context.AddSource($"{group.Key.Name}_autoNotify.cs", SourceText.From(classSource, Encoding.UTF8));
+                if (classSource is not null)
+                {
+
+                    StringBuilder b = new StringBuilder();
+                    ISymbol symbol = group.Key;
+                    while (symbol is not null)
+                    {
+                        if (b.Length != 0)
+                            b.Append('.');
+                        b.Append(symbol.MetadataName);
+                        symbol = symbol.ContainingSymbol;
+                    }
+
+                    context.AddSource($"{b}_autoNotify.cs", SourceText.From(classSource, Encoding.UTF8));
+                }
             }
         }
 
         private string ProcessClass(INamedTypeSymbol classSymbol, List<IFieldSymbol> fields, ISymbol attributeSymbol, ISymbol notifySymbol, GeneratorExecutionContext context)
         {
-            if (!classSymbol.ContainingSymbol.Equals(classSymbol.ContainingNamespace, SymbolEqualityComparer.Default))
-            {
-                return null; //TODO: issue a diagnostic that it must be top level
-            }
+
 
             string namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
-
+            StringBuilder source = new StringBuilder();
             // begin building the generated source
-            StringBuilder source = new StringBuilder($@"
+            int additionalClasses = 0;
+
+            source.Append($@"
+#nullable enable
 namespace {namespaceName}
 {{
-    public partial class {classSymbol.Name} : {notifySymbol.ToDisplayString()}
+");
+
+            var queue = new Queue<ITypeSymbol>();
+            var containing = classSymbol.ContainingSymbol;
+            while (!containing.Equals(classSymbol.ContainingNamespace, SymbolEqualityComparer.Default))
+            {
+                if (containing is ITypeSymbol type)
+                {
+                    queue.Enqueue(type);
+                }
+                else
+                {
+                    //TODO: issue a diagnostic that the containing type is not supported
+                    return null;
+                }
+                containing = containing.ContainingSymbol;
+
+            }
+
+            additionalClasses = queue.Count;
+
+            while (queue.Count > 0)
+            {
+                var type = queue.Dequeue();
+                var kind = type.TypeKind switch
+                {
+                    TypeKind.Class => "class",
+                    TypeKind.Struct => "struct",
+                    _ => null
+                };
+                if (kind is null)
+                    return null;
+
+                source.Append($@"
+    partial {kind} {type.Name}
     {{
 ");
+            }
+
+
+
+            source.Append($@"
+    partial class {classSymbol.Name} : {notifySymbol.ToDisplayString()}
+    {{
+");
+
 
             // if the class doesn't implement INotifyPropertyChanged already, add it
             if (!classSymbol.Interfaces.Contains(notifySymbol))
             {
-                source.Append("public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;");
+                source.Append("public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;");
             }
 
             // create properties for each field 
@@ -87,6 +145,10 @@ namespace {namespaceName}
                 ProcessField(source, fieldSymbol, attributeSymbol);
             }
 
+            for (int i = 0; i < additionalClasses; i++)
+            {
+                source.Append("} ");
+            }
             source.Append("} }");
             return source.ToString();
         }
