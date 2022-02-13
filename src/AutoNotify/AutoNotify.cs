@@ -143,12 +143,16 @@ namespace {namespaceName}
 
         private static string GetKind(ITypeSymbol classSymbol)
         {
-            return classSymbol.TypeKind switch
+            string v = classSymbol.TypeKind switch
             {
                 TypeKind.Class => "class",
                 TypeKind.Struct => "struct",
+                TypeKind.Interface => "interface",
                 _ => null
             };
+            if (classSymbol.IsRecord)
+                v = $"record {v}";
+            return v;
         }
 
         private void ProcessField(StringBuilder source, IFieldSymbol fieldSymbol, ISymbol attributeSymbol)
