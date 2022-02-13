@@ -110,25 +110,13 @@ namespace {namespaceName}
             while (queue.Count > 0)
             {
                 var type = queue.Dequeue();
-                var kind = type.TypeKind switch
-                {
-                    TypeKind.Class => "class",
-                    TypeKind.Struct => "struct",
-                    _ => null
-                };
-                if (kind is null)
-                    return null;
-
                 source.Append($@"
-    partial {kind} {type.Name}
+    partial {GetKind(type)} {type.Name}
     {{
 ");
             }
-
-
-
             source.Append($@"
-    partial class {classSymbol.Name} : {notifySymbol.ToDisplayString()}
+    partial {GetKind(classSymbol)} {classSymbol.Name} : {notifySymbol.ToDisplayString()}
     {{
 ");
 
@@ -151,6 +139,16 @@ namespace {namespaceName}
             }
             source.Append("} }");
             return source.ToString();
+        }
+
+        private static string GetKind(ITypeSymbol classSymbol)
+        {
+            return classSymbol.TypeKind switch
+            {
+                TypeKind.Class => "class",
+                TypeKind.Struct => "struct",
+                _ => null
+            };
         }
 
         private void ProcessField(StringBuilder source, IFieldSymbol fieldSymbol, ISymbol attributeSymbol)
