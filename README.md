@@ -6,6 +6,11 @@
 
 Original code from https://github.com/dotnet/roslyn-sdk/tree/main/samples/CSharp/SourceGenerators
 
+### Default attribute arguments
+```cs
+[AutoNotify(CheckEquality = EqualityCheck.None, GetterVisibility = Visibility.Public, SetterVisibility = Visibility.Public)]
+```
+
 ## Example
 
 ```cs
