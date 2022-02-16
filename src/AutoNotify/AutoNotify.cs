@@ -27,10 +27,38 @@ namespace SourceGenerators
         {
         }
         public string? PropertyName { get; set; }
+        public Visibility GetterVisibility { get; set; } = Visibility.Public;
+        public Visibility SetterVisibility { get; set; } = Visibility.Public;
+        public EqualityCheck CheckEquality { get; set; } = EqualityCheck.None;
+    }
+
+    public enum EqualityCheck {
+        None = 0,
+        Equals = 1,
+        ReferenceEquals = 2
+    }
+
+    public enum Visibility {
+        Private = 0,
+        Internal = 1,
+        Protected = 2,
+        Public = 3
     }
 }
 ";
 
+    public enum EqualityCheck {
+        None = 0,
+        Equals = 1,
+        ReferenceEquals = 2
+    }
+
+    public enum Visibility {
+        Private = 0,
+        Internal = 1,
+        Protected = 2,
+        Public = 3
+    }
 
         public void Initialize(GeneratorInitializationContext context)
         {
@@ -172,18 +200,45 @@ namespace {namespaceName}
                 return;
             }
 
+            // get the highest visiblity for the property
+            int getterNumberVisbility = (int?)attributeData.NamedArguments.SingleOrDefault(kvp => kvp.Key == "GetterVisibility").Value.Value ?? 3;
+            int setterNumberVisibility = (int?)attributeData.NamedArguments.SingleOrDefault(kvp => kvp.Key == "SetterVisibility").Value.Value ?? 3;
+            var maxVisibility = (Visibility)Math.Max(
+                getterNumberVisbility,
+                setterNumberVisibility);
+
+            // check if any getter setter has a lower visiblity
+            var getterVisibility = getterNumberVisbility < (int)maxVisibility
+            ? ((Visibility)getterNumberVisbility).ToString().ToLower()
+            : string.Empty;
+
+            var setterVisibility = setterNumberVisibility < (int)maxVisibility
+            ? ((Visibility)setterNumberVisibility).ToString().ToLower()
+            : string.Empty;
+
+            // add equality check
+            var equalityCheck = (EqualityCheck) ((int?)attributeData.NamedArguments.SingleOrDefault(kvp => kvp.Key == "CheckEquality").Value.Value ?? 0);
+
+            var check = equalityCheck switch {
+                EqualityCheck.Equals => @$"if(!Object.Equals(this.{fieldName}, value))",
+                EqualityCheck.ReferenceEquals => @$"if(!Object.ReferenceEquals(this.{fieldName}, value))",
+                _=>""
+            };
             source.Append($@"
-public {fieldType} {propertyName} 
+{maxVisibility.ToString().ToLower()} {fieldType} {propertyName} 
 {{
-    get 
+    {getterVisibility} get 
     {{
         return this.{fieldName};
     }}
 
-    set
+    {setterVisibility} set
     {{
-        this.{fieldName} = value;
+        {check}
+        {{
+       this.{fieldName} = value;
         this.PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof({propertyName})));
+        }}
     }}
 }}
 
