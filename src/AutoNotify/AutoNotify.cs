@@ -32,13 +32,13 @@ namespace SourceGenerators
         public EqualityCheck CheckEquality { get; set; } = EqualityCheck.None;
     }
 
-    public enum EqualityCheck {
+    enum EqualityCheck {
         None = 0,
         Equals = 1,
         ReferenceEquals = 2
     }
 
-    public enum Visibility {
+    enum Visibility {
         Private = 0,
         Internal = 1,
         Protected = 2,
@@ -47,18 +47,20 @@ namespace SourceGenerators
 }
 ";
 
-    public enum EqualityCheck {
-        None = 0,
-        Equals = 1,
-        ReferenceEquals = 2
-    }
+        private enum EqualityCheck
+        {
+            None = 0,
+            Equals = 1,
+            ReferenceEquals = 2
+        }
 
-    public enum Visibility {
-        Private = 0,
-        Internal = 1,
-        Protected = 2,
-        Public = 3
-    }
+        private enum Visibility
+        {
+            Private = 0,
+            Internal = 1,
+            Protected = 2,
+            Public = 3
+        }
 
         public void Initialize(GeneratorInitializationContext context)
         {
@@ -217,12 +219,13 @@ namespace {namespaceName}
             : string.Empty;
 
             // add equality check
-            var equalityCheck = (EqualityCheck) ((int?)attributeData.NamedArguments.SingleOrDefault(kvp => kvp.Key == "CheckEquality").Value.Value ?? 0);
+            var equalityCheck = (EqualityCheck)((int?)attributeData.NamedArguments.SingleOrDefault(kvp => kvp.Key == "CheckEquality").Value.Value ?? 0);
 
-            var check = equalityCheck switch {
+            var check = equalityCheck switch
+            {
                 EqualityCheck.Equals => @$"if(!Object.Equals(this.{fieldName}, value))",
                 EqualityCheck.ReferenceEquals => @$"if(!Object.ReferenceEquals(this.{fieldName}, value))",
-                _=>""
+                _ => ""
             };
             source.Append($@"
 {maxVisibility.ToString().ToLower()} {fieldType} {propertyName} 
