@@ -13,7 +13,7 @@
     <PackageProjectUrl>https://github.com/GioviQ/SourceGenerators.AutoNotify</PackageProjectUrl>
     <RepositoryUrl>https://github.com/GioviQ/SourceGenerators.AutoNotify</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <IncludeBuildOutput>false</IncludeBuildOutput>

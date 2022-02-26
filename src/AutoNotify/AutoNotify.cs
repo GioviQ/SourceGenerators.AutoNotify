@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace SourceGenerators
 {
@@ -18,7 +18,7 @@ namespace SourceGenerators
 using System;
 namespace SourceGenerators
 {
-    #nullable enable
+    
     [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
     [System.Diagnostics.Conditional(""AutoNotifyGenerator_DEBUG"")]
     sealed class AutoNotifyAttribute : Attribute
@@ -64,6 +64,12 @@ namespace SourceGenerators
 
         public void Initialize(GeneratorInitializationContext context)
         {
+            //#if DEBUG
+            //            if (!Debugger.IsAttached)
+            //            {
+            //                Debugger.Launch();
+            //            }
+            //#endif
             // Register the attribute source
             context.RegisterForPostInitialization((i) => i.AddSource("AutoNotifyAttribute", attributeText));
 
@@ -95,7 +101,7 @@ namespace SourceGenerators
                         if (b.Length != 0)
                             b.Append('.');
                         b.Append(symbol.MetadataName);
-                        symbol = symbol.ContainingSymbol;
+                        symbol = symbol.ContainingType;
                     }
 
                     context.AddSource($"{b}_autoNotify.cs", SourceText.From(classSource, Encoding.UTF8));
@@ -113,7 +119,7 @@ namespace SourceGenerators
             int additionalClasses = 0;
 
             source.Append($@"
-#nullable enable
+
 namespace {namespaceName}
 {{
 ");
@@ -227,23 +233,25 @@ namespace {namespaceName}
                 EqualityCheck.ReferenceEquals => @$"if(!Object.ReferenceEquals(this.{fieldName}, value))",
                 _ => ""
             };
-            source.Append($@"
-{maxVisibility.ToString().ToLower()} {fieldType} {propertyName} 
-{{
-    {getterVisibility} get 
-    {{
-        return this.{fieldName};
-    }}
 
-    {setterVisibility} set
-    {{
-        {check}
+            source.Append($@"
+
+        {maxVisibility.ToString().ToLower()} {fieldType} {propertyName} 
         {{
-       this.{fieldName} = value;
-        this.PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof({propertyName})));
+            {getterVisibility} get 
+            {{
+                return this.{fieldName};
+            }}
+
+            {setterVisibility} set
+            {{
+                {check}
+                {{
+                   this.{fieldName} = value;
+                   this.PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof({propertyName})));
+                }}
+            }}
         }}
-    }}
-}}
 
 ");
 
