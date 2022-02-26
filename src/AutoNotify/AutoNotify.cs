@@ -26,7 +26,7 @@ namespace SourceGenerators
         public AutoNotifyAttribute()
         {
         }
-        public string? PropertyName { get; set; }
+        public string PropertyName { get; set; }
         public Visibility GetterVisibility { get; set; } = Visibility.Public;
         public Visibility SetterVisibility { get; set; } = Visibility.Public;
         public EqualityCheck CheckEquality { get; set; } = EqualityCheck.None;
@@ -160,7 +160,7 @@ namespace {namespaceName}
             // if the class doesn't implement INotifyPropertyChanged already, add it
             if (!classSymbol.Interfaces.Contains(notifySymbol))
             {
-                source.Append("public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;");
+                source.Append("public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;");
             }
 
             // create properties for each field 
