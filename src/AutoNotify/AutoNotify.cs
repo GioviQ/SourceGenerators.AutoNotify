@@ -26,12 +26,17 @@ namespace SourceGenerators
         public AutoNotifyAttribute()
         {
         }
-        public string PropertyName { get; set; }
+        public string PropertyName { get; set; } = ""; //Avoids Compliler Warning as this is set
         public Visibility GetterVisibility { get; set; } = Visibility.Public;
         public Visibility SetterVisibility { get; set; } = Visibility.Public;
         public EqualityCheck CheckEquality { get; set; } = EqualityCheck.None;
     }
-
+    
+    public AutoNotifyAttribute(string propertyName)
+    {
+        PropertyName = propertyName;
+    }
+    
     enum EqualityCheck {
         None = 0,
         Equals = 1,
