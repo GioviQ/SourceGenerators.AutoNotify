@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+#pragma warning disable RS1035
+
 namespace SourceGenerators
 {
     [Generator]
@@ -16,6 +18,9 @@ namespace SourceGenerators
 
         private const string attributeText = @"
 using System;
+
+#pragma warning disable CS8618
+
 namespace SourceGenerators
 {
     
@@ -88,7 +93,7 @@ namespace SourceGenerators
             INamedTypeSymbol notifySymbol = context.Compilation.GetTypeByMetadataName("System.ComponentModel.INotifyPropertyChanged");
 
             // group the fields by class, and generate the source
-            foreach (IGrouping<INamedTypeSymbol, IFieldSymbol> group in receiver.Fields.GroupBy(f => f.ContainingType))
+            foreach (IGrouping<INamedTypeSymbol, IFieldSymbol> group in receiver.Fields.GroupBy<IFieldSymbol, INamedTypeSymbol>(f => f.ContainingType, SymbolEqualityComparer.Default))
             {
                 string classSource = ProcessClass(group.Key, group.ToList(), attributeSymbol, notifySymbol, context);
                 if (classSource is not null)
@@ -158,7 +163,7 @@ namespace {namespaceName}
 
 
             // if the class doesn't implement INotifyPropertyChanged already, add it
-            if (!classSymbol.Interfaces.Contains(notifySymbol))
+            if (!classSymbol.Interfaces.Contains(notifySymbol, SymbolEqualityComparer.Default))
             {
                 source.Append("public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;");
             }
